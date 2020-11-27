@@ -48,6 +48,10 @@ public class LinuxFirewall {
     private Set<PortForwardRule> portForwardRules;
     private Set<NATRule> autoNatRules;
     private Set<NATRule> natRules;
+    private List<String> verbatimNatPolicies;
+    private List<String> verbatimNatRules;
+    private List<String> verbatimFilterPolicies;
+    private List<String> verbatimFilterRules;
     private boolean allowIcmp;
     private boolean allowForwarding;
     private final IptablesConfig iptables;
@@ -68,6 +72,7 @@ public class LinuxFirewall {
             logger.error("cannot create or read file", e); // File did not exist and was created
         }
         try {
+            this.iptables.save();
             initialize();
         } catch (KuraException e) {
             logger.error("failed to initialize LinuxFirewall", e);
@@ -81,6 +86,10 @@ public class LinuxFirewall {
         this.portForwardRules = this.iptables.getPortForwardRules();
         this.autoNatRules = this.iptables.getAutoNatRules();
         this.natRules = this.iptables.getNatRules();
+        this.verbatimNatPolicies = this.iptables.getVerbatimNatPolicies();
+        this.verbatimNatRules = this.iptables.getVerbatimNatRules();
+        this.verbatimFilterPolicies = this.iptables.getVerbatimFilterPolicies();
+        this.verbatimFilterRules = this.iptables.getVerbatimFilterRules();
         this.allowIcmp = true;
         this.allowForwarding = false;
         logger.debug("initialize() :: Parsing current firewall configuraion");
@@ -456,6 +465,10 @@ public class LinuxFirewall {
         }
         IptablesConfig newIptables = new IptablesConfig(this.localRules, this.portForwardRules, this.autoNatRules,
                 this.natRules, this.allowIcmp, this.executorService);
+        newIptables.setVerbatimFilterPolicies(this.verbatimFilterPolicies);
+        newIptables.setVerbatimNatPolicies(this.verbatimNatPolicies);
+        newIptables.setVerbatimFilterRules(this.verbatimFilterRules);
+        newIptables.setVerbatimNatRules(this.verbatimNatRules);
         newIptables.save(IptablesConfig.FIREWALL_TMP_CONFIG_FILE_NAME);
         newIptables.restore(IptablesConfig.FIREWALL_TMP_CONFIG_FILE_NAME);
         logger.debug("Managing port forwarding...");
